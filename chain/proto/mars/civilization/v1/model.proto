@@ -1,0 +1,356 @@
+syntax = "proto3";
+
+package mars.civilization.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "mars/x/civilization/api/v1";
+
+// GoalType identifies who authorized a goal.
+enum GoalType {
+  // GOAL_TYPE_UNSPECIFIED is invalid for persisted goals.
+  GOAL_TYPE_UNSPECIFIED = 0;
+  // GOAL_TYPE_PRAXEON is authorized and owned by one Praxeon.
+  GOAL_TYPE_PRAXEON = 1;
+  // GOAL_TYPE_AGENT is assigned by one Praxeon to an Agent.
+  GOAL_TYPE_AGENT = 2;
+  // GOAL_TYPE_CIVILIZATION is authorized by a ratified proposal.
+  GOAL_TYPE_CIVILIZATION = 3;
+}
+
+// GoalStatus is the lifecycle state of a goal.
+enum GoalStatus {
+  // GOAL_STATUS_UNSPECIFIED is invalid for persisted goals.
+  GOAL_STATUS_UNSPECIFIED = 0;
+  // GOAL_STATUS_DRAFT has not been activated.
+  GOAL_STATUS_DRAFT = 1;
+  // GOAL_STATUS_ACTIVE is currently being pursued.
+  GOAL_STATUS_ACTIVE = 2;
+  // GOAL_STATUS_BLOCKED cannot proceed without resolving a blocker.
+  GOAL_STATUS_BLOCKED = 3;
+  // GOAL_STATUS_PAUSED is intentionally inactive.
+  GOAL_STATUS_PAUSED = 4;
+  // GOAL_STATUS_ACHIEVED satisfied its declared checks.
+  GOAL_STATUS_ACHIEVED = 5;
+  // GOAL_STATUS_ABANDONED was explicitly stopped.
+  GOAL_STATUS_ABANDONED = 6;
+  // GOAL_STATUS_EXPIRED passed its declared deadline without achievement.
+  GOAL_STATUS_EXPIRED = 7;
+}
+
+// ProposalType identifies the durable object produced by a proposal.
+enum ProposalType {
+  // PROPOSAL_TYPE_UNSPECIFIED is invalid for filed proposals.
+  PROPOSAL_TYPE_UNSPECIFIED = 0;
+  // PROPOSAL_TYPE_RULE creates or changes an executable Rule.
+  PROPOSAL_TYPE_RULE = 1;
+  // PROPOSAL_TYPE_CHARTER creates or changes an Org Charter.
+  PROPOSAL_TYPE_CHARTER = 2;
+  // PROPOSAL_TYPE_CIVILIZATION_GOAL authorizes a public civilization Goal.
+  PROPOSAL_TYPE_CIVILIZATION_GOAL = 3;
+  // PROPOSAL_TYPE_REVOKE revokes an existing governed object.
+  PROPOSAL_TYPE_REVOKE = 4;
+  // PROPOSAL_TYPE_PROCEDURE affects only the current governance process.
+  PROPOSAL_TYPE_PROCEDURE = 5;
+}
+
+// ProposalStatus is the governance lifecycle state.
+enum ProposalStatus {
+  // PROPOSAL_STATUS_UNSPECIFIED is invalid for persisted proposals.
+  PROPOSAL_STATUS_UNSPECIFIED = 0;
+  // PROPOSAL_STATUS_FILED awaits a distinct seconder.
+  PROPOSAL_STATUS_FILED = 1;
+  // PROPOSAL_STATUS_NOTICED has been distributed to the eligible snapshot.
+  PROPOSAL_STATUS_NOTICED = 2;
+  // PROPOSAL_STATUS_DELIBERATING is open for discussion and amendments.
+  PROPOSAL_STATUS_DELIBERATING = 3;
+  // PROPOSAL_STATUS_BALLOT_OPEN accepts ballots.
+  PROPOSAL_STATUS_BALLOT_OPEN = 4;
+  // PROPOSAL_STATUS_RATIFIED passed its declared rule.
+  PROPOSAL_STATUS_RATIFIED = 5;
+  // PROPOSAL_STATUS_REJECTED met quorum but failed its declared rule.
+  PROPOSAL_STATUS_REJECTED = 6;
+  // PROPOSAL_STATUS_EXPIRED_NO_QUORUM did not reach required participation.
+  PROPOSAL_STATUS_EXPIRED_NO_QUORUM = 7;
+  // PROPOSAL_STATUS_INVALID was replaced or failed procedural validation.
+  PROPOSAL_STATUS_INVALID = 8;
+  // PROPOSAL_STATUS_AWAITING_DECISION is closed and ready for deterministic finalization.
+  PROPOSAL_STATUS_AWAITING_DECISION = 9;
+}
+
+// VoteRequestDeliveryStatus records whether the internal Agent inbox route succeeded.
+enum VoteRequestDeliveryStatus {
+  // VOTE_REQUEST_DELIVERY_STATUS_UNSPECIFIED is invalid for a noticed proposal.
+  VOTE_REQUEST_DELIVERY_STATUS_UNSPECIFIED = 0;
+  // VOTE_REQUEST_DELIVERY_STATUS_DELIVERED means the request is available in the routed Agent inbox.
+  VOTE_REQUEST_DELIVERY_STATUS_DELIVERED = 1;
+  // VOTE_REQUEST_DELIVERY_STATUS_FAILED means no active Agent route was available.
+  VOTE_REQUEST_DELIVERY_STATUS_FAILED = 2;
+}
+
+// RiskLevel controls whether a proposal requires an elevated threshold or dedicated authorization.
+enum RiskLevel {
+  // RISK_LEVEL_UNSPECIFIED is invalid for filed proposals.
+  RISK_LEVEL_UNSPECIFIED = 0;
+  // RISK_LEVEL_LOW has limited reversible impact.
+  RISK_LEVEL_LOW = 1;
+  // RISK_LEVEL_MEDIUM has material but bounded impact.
+  RISK_LEVEL_MEDIUM = 2;
+  // RISK_LEVEL_HIGH requires a dedicated authorization and elevated threshold.
+  RISK_LEVEL_HIGH = 3;
+  // RISK_LEVEL_CRITICAL affects safety or foundational authority.
+  RISK_LEVEL_CRITICAL = 4;
+}
+
+// ApprovalRule selects the deterministic counting rule.
+enum ApprovalRule {
+  // APPROVAL_RULE_UNSPECIFIED is invalid when a ballot opens.
+  APPROVAL_RULE_UNSPECIFIED = 0;
+  // APPROVAL_RULE_SIMPLE_MAJORITY requires more yes than no ballots.
+  APPROVAL_RULE_SIMPLE_MAJORITY = 1;
+  // APPROVAL_RULE_TWO_THIRDS requires yes to be at least two thirds of yes plus no.
+  APPROVAL_RULE_TWO_THIRDS = 2;
+}
+
+// VoteMode defines what an Agent may do for one Praxeon ID.
+enum VoteMode {
+  // VOTE_MODE_UNSPECIFIED grants no authority.
+  VOTE_MODE_UNSPECIFIED = 0;
+  // VOTE_MODE_NOTIFY_ONLY allows delivery and summarization only.
+  VOTE_MODE_NOTIFY_ONLY = 1;
+  // VOTE_MODE_CONFIRM_EACH requires an exact one-time Praxeon confirmation.
+  VOTE_MODE_CONFIRM_EACH = 2;
+  // VOTE_MODE_POLICY_VOTE allows autonomous submission within a signed policy.
+  VOTE_MODE_POLICY_VOTE = 3;
+}
+
+// BallotChoice is a signed response to one proposal version.
+enum BallotChoice {
+  // BALLOT_CHOICE_UNSPECIFIED is not a valid submitted choice.
+  BALLOT_CHOICE_UNSPECIFIED = 0;
+  // BALLOT_CHOICE_YES supports the proposal.
+  BALLOT_CHOICE_YES = 1;
+  // BALLOT_CHOICE_NO opposes the proposal.
+  BALLOT_CHOICE_NO = 2;
+  // BALLOT_CHOICE_ABSTAIN participates without entering the yes-no denominator.
+  BALLOT_CHOICE_ABSTAIN = 3;
+}
+
+// SubmitterType identifies whether a Praxeon or an authorized Agent submitted a ballot.
+enum SubmitterType {
+  // SUBMITTER_TYPE_UNSPECIFIED is invalid for a ballot.
+  SUBMITTER_TYPE_UNSPECIFIED = 0;
+  // SUBMITTER_TYPE_PRAXEON is a direct Praxeon ballot and locks Agent updates.
+  SUBMITTER_TYPE_PRAXEON = 1;
+  // SUBMITTER_TYPE_AGENT uses a valid Vote Authorization.
+  SUBMITTER_TYPE_AGENT = 2;
+}
+
+// EventType identifies a durable state transition in the vertical slice.
+enum EventType {
+  // EVENT_TYPE_UNSPECIFIED is invalid for a persisted event.
+  EVENT_TYPE_UNSPECIFIED = 0;
+  // EVENT_TYPE_GOAL_CREATED records a newly active Goal.
+  EVENT_TYPE_GOAL_CREATED = 1;
+  // EVENT_TYPE_PROPOSAL_FILED records a new immutable proposal version.
+  EVENT_TYPE_PROPOSAL_FILED = 2;
+  // EVENT_TYPE_PROPOSAL_NOTICED records automatic Vote Request distribution.
+  EVENT_TYPE_PROPOSAL_NOTICED = 3;
+  // EVENT_TYPE_PROPOSAL_AMENDED records invalidation and replacement.
+  EVENT_TYPE_PROPOSAL_AMENDED = 4;
+  // EVENT_TYPE_VOTE_AUTHORIZATION_CHANGED records grant or revocation.
+  EVENT_TYPE_VOTE_AUTHORIZATION_CHANGED = 5;
+  // EVENT_TYPE_BALLOT_CONFIRMED records one exact confirm-each approval.
+  EVENT_TYPE_BALLOT_CONFIRMED = 6;
+  // EVENT_TYPE_BALLOT_SUBMITTED records a current Ballot update.
+  EVENT_TYPE_BALLOT_SUBMITTED = 7;
+  // EVENT_TYPE_DECISION_FINALIZED records deterministic counting.
+  EVENT_TYPE_DECISION_FINALIZED = 8;
+  // EVENT_TYPE_CIVILIZATION_GOAL_ACTIVATED records governance materialization.
+  EVENT_TYPE_CIVILIZATION_GOAL_ACTIVATED = 9;
+  // EVENT_TYPE_VOTE_REQUEST_ACKNOWLEDGED records exact-hash Agent receipt.
+  EVENT_TYPE_VOTE_REQUEST_ACKNOWLEDGED = 10;
+}
+
+// EventVisibility controls which Agent event streams may expose an event.
+enum EventVisibility {
+  // EVENT_VISIBILITY_UNSPECIFIED is invalid for a persisted event.
+  EVENT_VISIBILITY_UNSPECIFIED = 0;
+  // EVENT_VISIBILITY_PUBLIC is visible to every active Agent.
+  EVENT_VISIBILITY_PUBLIC = 1;
+  // EVENT_VISIBILITY_PRAXEON is visible to Agents owned by one Praxeon ID.
+  EVENT_VISIBILITY_PRAXEON = 2;
+  // EVENT_VISIBILITY_AGENT is visible only to one Agent.
+  EVENT_VISIBILITY_AGENT = 3;
+}
+
+// GoalCheck is one visible success condition for a goal.
+message GoalCheck {
+  string check_id = 1;
+  string description = 2;
+  uint32 weight_bps = 3;
+  bool satisfied = 4;
+  repeated string source_result_ids = 5;
+}
+
+// Goal is an explicitly authorized expected result.
+message Goal {
+  string goal_id = 1;
+  GoalType goal_type = 2;
+  string title = 3;
+  string description_hash = 4;
+  string owner_praxeon_id = 5;
+  string governance_proposal_id = 6;
+  repeated string assigned_agent_ids = 7;
+  GoalStatus status = 8;
+  repeated GoalCheck success_checks = 9;
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp target_at = 11;
+}
+
+// CivilizationGoalSpec is embedded in a civilization-goal proposal and materializes only after ratification.
+message CivilizationGoalSpec {
+  string goal_id = 1;
+  string title = 2;
+  string description_hash = 3;
+  repeated GoalCheck success_checks = 4;
+  repeated string assigned_agent_ids = 5;
+  google.protobuf.Timestamp target_at = 6;
+}
+
+// Proposal is one immutable governance question version.
+message Proposal {
+  string proposal_id = 1;
+  uint64 version = 2;
+  string proposal_hash = 3;
+  ProposalType proposal_type = 4;
+  string title = 5;
+  string summary = 6;
+  string body_hash = 7;
+  string proposer_praxeon_id = 8;
+  string seconder_praxeon_id = 9;
+  string domain = 10;
+  RiskLevel risk_level = 11;
+  ApprovalRule approval_rule = 12;
+  google.protobuf.Timestamp notice_opens_at = 13;
+  google.protobuf.Timestamp ballot_opens_at = 14;
+  google.protobuf.Timestamp ballot_closes_at = 15;
+  repeated string eligible_praxeon_ids = 16;
+  ProposalStatus status = 17;
+  CivilizationGoalSpec civilization_goal = 18;
+  bool affects_governance = 19;
+  bool reduces_rights = 20;
+  string procedure_kind = 21;
+  ApprovalRule target_approval_rule = 22;
+  string eligibility_snapshot_hash = 23;
+  google.protobuf.Timestamp eligibility_frozen_at = 24;
+}
+
+// VoteRequest is the automatically distributed package for one eligible Praxeon ID.
+message VoteRequest {
+  string vote_request_id = 1;
+  string proposal_id = 2;
+  uint64 proposal_version = 3;
+  string proposal_hash = 4;
+  string eligible_praxeon_id = 5;
+  string recipient_agent_id = 6;
+  google.protobuf.Timestamp delivered_at = 7;
+  google.protobuf.Timestamp acknowledged_at = 8;
+  google.protobuf.Timestamp ballot_deadline = 9;
+  bool invalidated = 10;
+  VoteRequestDeliveryStatus delivery_status = 11;
+  string delivery_failure = 12;
+}
+
+// VoteAuthorization is signed, scoped, expiring, revocable and non-transferable.
+message VoteAuthorization {
+  string authorization_id = 1;
+  string praxeon_id = 2;
+  string agent_id = 3;
+  VoteMode mode = 4;
+  repeated ProposalType allowed_proposal_types = 5;
+  repeated string allowed_domains = 6;
+  RiskLevel max_risk_level = 7;
+  google.protobuf.Timestamp valid_from = 8;
+  google.protobuf.Timestamp expires_at = 9;
+  string decision_policy_hash = 10;
+  bool can_abstain = 11;
+  bool requires_reason = 12;
+  bool revoked = 13;
+  repeated string allowed_proposal_ids = 14;
+  string authorization_hash = 15;
+}
+
+// BallotConfirmation authorizes exactly one Agent choice for one proposal version.
+message BallotConfirmation {
+  string confirmation_id = 1;
+  string praxeon_id = 2;
+  string agent_id = 3;
+  string proposal_id = 4;
+  uint64 proposal_version = 5;
+  BallotChoice choice = 6;
+  google.protobuf.Timestamp expires_at = 7;
+  bool used = 8;
+}
+
+// Ballot is the current signed response of one Praxeon ID to one proposal version.
+message Ballot {
+  string ballot_id = 1;
+  string proposal_id = 2;
+  uint64 proposal_version = 3;
+  string voter_praxeon_id = 4;
+  BallotChoice choice = 5;
+  SubmitterType submitted_by = 6;
+  string signer_id = 7;
+  string authorization_id = 8;
+  string confirmation_id = 9;
+  string reason_hash = 10;
+  uint64 sequence = 11;
+  bool praxeon_lock = 12;
+  bool invalidated = 13;
+  google.protobuf.Timestamp submitted_at = 14;
+  string proposal_hash = 15;
+  string authorization_hash = 16;
+}
+
+// Decision is the auditable result of finalizing one proposal version.
+message Decision {
+  string decision_id = 1;
+  string proposal_id = 2;
+  uint64 proposal_version = 3;
+  ProposalStatus outcome = 4;
+  uint32 eligible = 5;
+  uint32 yes = 6;
+  uint32 no = 7;
+  uint32 abstain = 8;
+  uint32 not_voted = 9;
+  ApprovalRule approval_rule = 10;
+  google.protobuf.Timestamp finalized_at = 11;
+  uint32 delivered = 12;
+  uint32 acknowledged = 13;
+}
+
+// AgentSnapshot is the machine-readable view for one Agent.
+message AgentSnapshot {
+  string snapshot_id = 1;
+  string agent_id = 2;
+  string praxeon_id = 3;
+  repeated Goal active_goals = 4;
+  repeated VoteRequest vote_requests = 5;
+  repeated string required_confirmation_request_ids = 6;
+  uint64 event_cursor = 7;
+  google.protobuf.Timestamp generated_at = 8;
+}
+
+// EventEnvelope is the unified append-only event cursor contract.
+message EventEnvelope {
+  uint64 cursor = 1;
+  string event_id = 2;
+  EventType event_type = 3;
+  string subject_id = 4;
+  string praxeon_id = 5;
+  string agent_id = 6;
+  EventVisibility visibility = 7;
+  string payload_hash = 8;
+  google.protobuf.Timestamp occurred_at = 9;
+}
