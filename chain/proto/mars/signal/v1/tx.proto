@@ -1,0 +1,59 @@
+syntax = "proto3";
+package mars.signal.v1;
+
+import "amino/amino.proto";
+import "cosmos/msg/v1/msg.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+import "mars/signal/v1/params.proto";
+
+option go_package = "mars/x/signal/types";
+
+// Msg defines the Msg service.
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+
+  // UpdateParams defines a (governance) operation for updating the module
+  // parameters. The authority defaults to the x/gov module account.
+  rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse);
+
+  // Signal lets a user send a Like. Use Signal is protocol-generated from a
+  // verified adoption receipt and is rejected by this public endpoint.
+  rpc Signal(MsgSignal) returns (MsgSignalResponse);
+}
+
+// MsgUpdateParams is the Msg/UpdateParams request type.
+message MsgUpdateParams {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "mars/x/signal/MsgUpdateParams";
+
+  // authority is the address that controls the module (defaults to x/gov unless overwritten).
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // params defines the module parameters to update.
+  //
+  // NOTE: All parameters must be supplied.
+  Params params = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// MsgUpdateParamsResponse defines the response structure for executing a
+// MsgUpdateParams message.
+message MsgUpdateParamsResponse {}
+
+// MsgSignal defines a public Like request. signal_type=1 is reserved for the
+// protocol receipt path and is rejected by the public message server.
+message MsgSignal {
+  option (cosmos.msg.v1.signer) = "sender";
+  option (amino.name) = "mars/x/signal/MsgSignal";
+
+  string sender = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string target = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  // signal_type: 1 = Use (weight 10), 2 = Like (weight 1)
+  uint32 signal_type = 3;
+}
+
+// MsgSignalResponse defines the response for sending a signal.
+message MsgSignalResponse {}
