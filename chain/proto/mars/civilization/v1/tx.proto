@@ -1,0 +1,184 @@
+syntax = "proto3";
+
+package mars.civilization.v1;
+
+import "amino/amino.proto";
+import "cosmos/msg/v1/msg.proto";
+import "cosmos_proto/cosmos.proto";
+import "mars/civilization/v1/model.proto";
+
+option go_package = "mars/x/civilization/api/v1";
+
+// Msg defines the civilization command API.
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+
+  // CreateGoal creates a Praxeon or Agent Goal.
+  rpc CreateGoal(MsgCreateGoal) returns (MsgCreateGoalResponse);
+  // FileProposal files immutable proposal version one.
+  rpc FileProposal(MsgFileProposal) returns (MsgFileProposalResponse);
+  // SecondProposal notices and automatically distributes one exact version.
+  rpc SecondProposal(MsgSecondProposal) returns (MsgSecondProposalResponse);
+  // AcknowledgeVoteRequest records that the routed Agent received one exact proposal hash.
+  rpc AcknowledgeVoteRequest(MsgAcknowledgeVoteRequest) returns (MsgAcknowledgeVoteRequestResponse);
+  // AmendProposal invalidates an old version and files a replacement.
+  rpc AmendProposal(MsgAmendProposal) returns (MsgAmendProposalResponse);
+  // SetVoteAuthorization grants one Agent scoped voting authority.
+  rpc SetVoteAuthorization(MsgSetVoteAuthorization) returns (MsgSetVoteAuthorizationResponse);
+  // RevokeVoteAuthorization prevents future use of a grant.
+  rpc RevokeVoteAuthorization(MsgRevokeVoteAuthorization) returns (MsgRevokeVoteAuthorizationResponse);
+  // ConfirmBallot approves one exact Agent ballot choice.
+  rpc ConfirmBallot(MsgConfirmBallot) returns (MsgConfirmBallotResponse);
+  // SubmitBallot creates or updates the current ballot of one Praxeon ID.
+  rpc SubmitBallot(MsgSubmitBallot) returns (MsgSubmitBallotResponse);
+  // FinalizeProposal counts ballots and materializes a Decision.
+  rpc FinalizeProposal(MsgFinalizeProposal) returns (MsgFinalizeProposalResponse);
+}
+
+// MsgCreateGoal creates a Praxeon or Agent goal; civilization goals require a ratified proposal.
+message MsgCreateGoal {
+  option (cosmos.msg.v1.signer) = "signer";
+  option (amino.name) = "mars/x/civilization/MsgCreateGoal";
+
+  string signer = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  Goal goal = 2;
+}
+
+// MsgCreateGoalResponse returns the created goal identifier.
+message MsgCreateGoalResponse {
+  string goal_id = 1;
+}
+
+// MsgFileProposal files proposal version one.
+message MsgFileProposal {
+  option (cosmos.msg.v1.signer) = "signer";
+  option (amino.name) = "mars/x/civilization/MsgFileProposal";
+
+  string signer = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  Proposal proposal = 2;
+}
+
+// MsgFileProposalResponse returns the filed proposal identifier and version.
+message MsgFileProposalResponse {
+  string proposal_id = 1;
+  uint64 version = 2;
+}
+
+// MsgSecondProposal seconds one exact proposal version without implying support.
+message MsgSecondProposal {
+  option (cosmos.msg.v1.signer) = "signer";
+  option (amino.name) = "mars/x/civilization/MsgSecondProposal";
+
+  string signer = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string seconder_praxeon_id = 2;
+  string proposal_id = 3;
+  uint64 proposal_version = 4;
+}
+
+// MsgSecondProposalResponse returns the noticed proposal.
+message MsgSecondProposalResponse {
+  Proposal proposal = 1;
+}
+
+// MsgAcknowledgeVoteRequest records exact-hash receipt by the routed Agent.
+message MsgAcknowledgeVoteRequest {
+  option (cosmos.msg.v1.signer) = "signer";
+  option (amino.name) = "mars/x/civilization/MsgAcknowledgeVoteRequest";
+
+  string signer = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string vote_request_id = 2;
+  string proposal_hash = 3;
+}
+
+// MsgAcknowledgeVoteRequestResponse returns the acknowledged request.
+message MsgAcknowledgeVoteRequestResponse {
+  VoteRequest vote_request = 1;
+}
+
+// MsgAmendProposal creates a new material version and invalidates prior requests and ballots.
+message MsgAmendProposal {
+  option (cosmos.msg.v1.signer) = "signer";
+  option (amino.name) = "mars/x/civilization/MsgAmendProposal";
+
+  string signer = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string proposer_praxeon_id = 2;
+  string proposal_id = 3;
+  uint64 expected_version = 4;
+  Proposal replacement = 5;
+}
+
+// MsgAmendProposalResponse returns the new filed version.
+message MsgAmendProposalResponse {
+  Proposal proposal = 1;
+}
+
+// MsgSetVoteAuthorization creates or replaces a scoped Agent authorization.
+message MsgSetVoteAuthorization {
+  option (cosmos.msg.v1.signer) = "signer";
+  option (amino.name) = "mars/x/civilization/MsgSetVoteAuthorization";
+
+  string signer = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  VoteAuthorization authorization = 2;
+}
+
+// MsgSetVoteAuthorizationResponse returns the authorization identifier.
+message MsgSetVoteAuthorizationResponse {
+  string authorization_id = 1;
+}
+
+// MsgRevokeVoteAuthorization revokes future use of an authorization.
+message MsgRevokeVoteAuthorization {
+  option (cosmos.msg.v1.signer) = "signer";
+  option (amino.name) = "mars/x/civilization/MsgRevokeVoteAuthorization";
+
+  string signer = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string praxeon_id = 2;
+  string authorization_id = 3;
+}
+
+// MsgRevokeVoteAuthorizationResponse is empty on success.
+message MsgRevokeVoteAuthorizationResponse {}
+
+// MsgConfirmBallot grants one exact confirm-each approval.
+message MsgConfirmBallot {
+  option (cosmos.msg.v1.signer) = "signer";
+  option (amino.name) = "mars/x/civilization/MsgConfirmBallot";
+
+  string signer = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  BallotConfirmation confirmation = 2;
+}
+
+// MsgConfirmBallotResponse returns the confirmation identifier.
+message MsgConfirmBallotResponse {
+  string confirmation_id = 1;
+}
+
+// MsgSubmitBallot submits or updates one Praxeon ID's current ballot.
+message MsgSubmitBallot {
+  option (cosmos.msg.v1.signer) = "signer";
+  option (amino.name) = "mars/x/civilization/MsgSubmitBallot";
+
+  string signer = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  Ballot ballot = 2;
+  uint64 expected_sequence = 3;
+}
+
+// MsgSubmitBallotResponse returns the accepted ballot and its sequence.
+message MsgSubmitBallotResponse {
+  Ballot ballot = 1;
+}
+
+// MsgFinalizeProposal deterministically counts ballots after the deadline.
+message MsgFinalizeProposal {
+  option (cosmos.msg.v1.signer) = "signer";
+  option (amino.name) = "mars/x/civilization/MsgFinalizeProposal";
+
+  string signer = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string proposal_id = 2;
+  uint64 proposal_version = 3;
+}
+
+// MsgFinalizeProposalResponse returns the public decision record.
+message MsgFinalizeProposalResponse {
+  Decision decision = 1;
+}
