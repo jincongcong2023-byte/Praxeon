@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+package mars.civilization.v1;
+
+import "google/api/annotations.proto";
+import "mars/civilization/v1/model.proto";
+
+option go_package = "mars/x/civilization/api/v1";
+
+// Query defines read-only civilization API endpoints.
+service Query {
+  // Goal returns one Goal.
+  rpc Goal(QueryGoalRequest) returns (QueryGoalResponse) {
+    option (google.api.http).get = "/mars/civilization/v1/goals/{goal_id}";
+  }
+  // Proposal returns the current proposal version.
+  rpc Proposal(QueryProposalRequest) returns (QueryProposalResponse) {
+    option (google.api.http).get = "/mars/civilization/v1/proposals/{proposal_id}";
+  }
+  // VoteRequest returns the delivery package for one eligible Praxeon ID.
+  rpc VoteRequest(QueryVoteRequestRequest) returns (QueryVoteRequestResponse) {
+    option (google.api.http).get = "/mars/civilization/v1/proposals/{proposal_id}/requests/{praxeon_id}";
+  }
+  // Decision returns the finalized result of one Proposal.
+  rpc Decision(QueryDecisionRequest) returns (QueryDecisionResponse) {
+    option (google.api.http).get = "/mars/civilization/v1/proposals/{proposal_id}/decision";
+  }
+  // AgentSnapshot returns one Agent's machine-readable current view.
+  rpc AgentSnapshot(QueryAgentSnapshotRequest) returns (QueryAgentSnapshotResponse) {
+    option (google.api.http).get = "/mars/civilization/v1/agents/{agent_id}/snapshot";
+  }
+  // Events returns visible events after one cursor for idempotent Agent consumption.
+  rpc Events(QueryEventsRequest) returns (QueryEventsResponse) {
+    option (google.api.http).get = "/mars/civilization/v1/agents/{agent_id}/events";
+  }
+}
+
+// QueryGoalRequest identifies one goal.
+message QueryGoalRequest {
+  string goal_id = 1;
+}
+
+// QueryGoalResponse returns one goal.
+message QueryGoalResponse {
+  Goal goal = 1;
+}
+
+// QueryProposalRequest identifies the current proposal version.
+message QueryProposalRequest {
+  string proposal_id = 1;
+}
+
+// QueryProposalResponse returns the current proposal version.
+message QueryProposalResponse {
+  Proposal proposal = 1;
+}
+
+// QueryVoteRequestRequest identifies one eligible Praxeon's request.
+message QueryVoteRequestRequest {
+  string proposal_id = 1;
+  string praxeon_id = 2;
+}
+
+// QueryVoteRequestResponse returns one vote request.
+message QueryVoteRequestResponse {
+  VoteRequest vote_request = 1;
+}
+
+// QueryDecisionRequest identifies the finalized proposal.
+message QueryDecisionRequest {
+  string proposal_id = 1;
+}
+
+// QueryDecisionResponse returns one decision.
+message QueryDecisionResponse {
+  Decision decision = 1;
+}
+
+// QueryAgentSnapshotRequest identifies one Agent.
+message QueryAgentSnapshotRequest {
+  string agent_id = 1;
+}
+
+// QueryAgentSnapshotResponse returns one machine-readable Agent snapshot.
+message QueryAgentSnapshotResponse {
+  AgentSnapshot snapshot = 1;
+}
+
+// QueryEventsRequest requests events strictly after after_cursor.
+message QueryEventsRequest {
+  string agent_id = 1;
+  uint64 after_cursor = 2;
+  uint32 limit = 3;
+}
+
+// QueryEventsResponse returns visible events and the latest delivered cursor.
+message QueryEventsResponse {
+  repeated EventEnvelope events = 1;
+  uint64 next_cursor = 2;
+}
