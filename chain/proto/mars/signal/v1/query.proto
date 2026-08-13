@@ -1,0 +1,45 @@
+syntax = "proto3";
+package mars.signal.v1;
+
+import "amino/amino.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "mars/signal/v1/params.proto";
+
+option go_package = "mars/x/signal/types";
+
+// Query defines the gRPC querier service.
+service Query {
+  // Parameters queries the parameters of the module.
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/mars/signal/v1/params";
+  }
+
+  // SignalWeight queries the accumulated signal weight for an address.
+  rpc SignalWeight(QuerySignalWeightRequest) returns (QuerySignalWeightResponse) {
+    option (google.api.http).get = "/mars/signal/v1/signal_weight/{address}";
+  }
+}
+
+// QueryParamsRequest is request type for the Query/Params RPC method.
+message QueryParamsRequest {}
+
+// QueryParamsResponse is response type for the Query/Params RPC method.
+message QueryParamsResponse {
+  // params holds all the parameters of this module.
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// QuerySignalWeightRequest is the request type for Query/SignalWeight.
+message QuerySignalWeightRequest {
+  string address = 1;
+}
+
+// QuerySignalWeightResponse is the response type for Query/SignalWeight.
+message QuerySignalWeightResponse {
+  uint64 weight = 1;
+}
