@@ -1,0 +1,60 @@
+syntax = "proto3";
+package mars.identity.v1;
+
+import "amino/amino.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "mars/identity/v1/params.proto";
+
+option go_package = "mars/x/identity/types";
+
+// Query defines the gRPC querier service.
+service Query {
+  // Parameters queries the parameters of the module.
+  rpc Params(QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/mars/identity/v1/params";
+  }
+
+  // CardByAddress queries the card number for a given address.
+  rpc CardByAddress(QueryCardByAddressRequest) returns (QueryCardByAddressResponse) {
+    option (google.api.http).get = "/mars/identity/v1/card_by_address/{address}";
+  }
+
+  // CardByNumber queries the address for a given card number.
+  rpc CardByNumber(QueryCardByNumberRequest) returns (QueryCardByNumberResponse) {
+    option (google.api.http).get = "/mars/identity/v1/card_by_number/{card_number}";
+  }
+}
+
+// QueryParamsRequest is request type for the Query/Params RPC method.
+message QueryParamsRequest {}
+
+// QueryParamsResponse is response type for the Query/Params RPC method.
+message QueryParamsResponse {
+  // params holds all the parameters of this module.
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// QueryCardByAddressRequest is the request type for Query/CardByAddress.
+message QueryCardByAddressRequest {
+  string address = 1;
+}
+
+// QueryCardByAddressResponse is the response type for Query/CardByAddress.
+message QueryCardByAddressResponse {
+  string card_number = 1;
+}
+
+// QueryCardByNumberRequest is the request type for Query/CardByNumber.
+message QueryCardByNumberRequest {
+  string card_number = 1;
+}
+
+// QueryCardByNumberResponse is the response type for Query/CardByNumber.
+message QueryCardByNumberResponse {
+  string address = 1;
+}
