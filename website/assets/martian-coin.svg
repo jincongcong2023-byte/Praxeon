@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="Praxeon Martian Coin">
+  <!-- 币环：素边圆形（无齿纹/无齿轮），墨黑深绿 -->
+  <circle cx="512" cy="512" r="436" fill="none" stroke="#111612" stroke-width="76"/>
+  <!-- 币面地层：两层水平土壤带（flat strips, no texture） -->
+  <rect x="292" y="646" width="440" height="30" fill="#111612"/>
+  <rect x="322" y="684" width="380" height="20" fill="#111612"/>
+  <!-- 城市剪影：几块小矩形，从地层升起（minimal skyline） -->
+  <rect x="352" y="540" width="54" height="106" fill="#111612"/>
+  <rect x="424" y="496" width="42" height="150" fill="#111612"/>
+  <rect x="484" y="562" width="58" height="84" fill="#111612"/>
+  <rect x="560" y="516" width="46" height="130" fill="#111612"/>
+  <rect x="622" y="566" width="40" height="80" fill="#111612"/>
+  <!-- 双月：琥珀（较大=Phobos）+ 锈红（较小=Deimos） -->
+  <circle cx="416" cy="418" r="28" fill="#E4A84E"/>
+  <circle cx="612" cy="386" r="17" fill="#E9754E"/>
+  <!-- 唯一酸绿点：城市正上方（贡献/决策点，全图仅此一处） -->
+  <circle cx="512" cy="452" r="13" fill="#D2F35B"/>
+</svg>
