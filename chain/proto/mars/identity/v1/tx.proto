@@ -1,0 +1,72 @@
+syntax = "proto3";
+package mars.identity.v1;
+
+import "amino/amino.proto";
+import "cosmos/msg/v1/msg.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+import "mars/identity/v1/params.proto";
+
+option go_package = "mars/x/identity/types";
+
+// Msg defines the Msg service.
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+
+  // UpdateParams defines a (governance) operation for updating the module
+  // parameters. The authority defaults to the x/gov module account.
+  rpc UpdateParams(MsgUpdateParams) returns (MsgUpdateParamsResponse);
+
+  // IssueCard issues a new identity card for the caller, returning the
+  // generated 16-digit card number (with Luhn check digit).
+  rpc IssueCard(MsgIssueCard) returns (MsgIssueCardResponse);
+
+  // RegisterAgent registers an agent address under the caller's card.
+  rpc RegisterAgent(MsgRegisterAgent) returns (MsgRegisterAgentResponse);
+}
+
+// MsgUpdateParams is the Msg/UpdateParams request type.
+message MsgUpdateParams {
+  option (cosmos.msg.v1.signer) = "authority";
+  option (amino.name) = "mars/x/identity/MsgUpdateParams";
+
+  // authority is the address that controls the module (defaults to x/gov unless overwritten).
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // params defines the module parameters to update.
+  //
+  // NOTE: All parameters must be supplied.
+  Params params = 2 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
+
+// MsgUpdateParamsResponse defines the response structure for executing a
+// MsgUpdateParams message.
+message MsgUpdateParamsResponse {}
+
+// MsgIssueCard defines the message to issue a new identity card.
+message MsgIssueCard {
+  option (cosmos.msg.v1.signer) = "creator";
+  option (amino.name) = "mars/x/identity/MsgIssueCard";
+
+  string creator = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}
+
+// MsgIssueCardResponse defines the response for issuing a card.
+message MsgIssueCardResponse {
+  string card_number = 1;
+}
+
+// MsgRegisterAgent registers an agent address under the caller's card.
+message MsgRegisterAgent {
+  option (cosmos.msg.v1.signer) = "creator";
+  option (amino.name) = "mars/x/identity/MsgRegisterAgent";
+
+  string creator = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string agent = 2 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+}
+
+// MsgRegisterAgentResponse defines the response for registering an agent.
+message MsgRegisterAgentResponse {}
